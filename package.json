@@ -7,7 +7,7 @@
     "dev:server": "nodemon --ignore 'heygen-client' app.js",
     "dev:client": "cd heygen-client && npm run serve",
     "build": "npm --prefix heygen-client install && npm --prefix heygen-client run build",
-    "start": "node app.js",
+    "start": "node app.js"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
