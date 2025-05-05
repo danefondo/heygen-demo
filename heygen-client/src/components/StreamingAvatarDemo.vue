@@ -2,7 +2,6 @@
   <div class="StreamingAvatar">
     <h2>Streaming Avatar</h2>
 
-    <!-- 1. Choose your avatar from the list -->
     <div v-if="avatars.length && !started" style="margin-bottom: 1rem">
       <label for="avatar-select">Pick an avatar:</label>
       <select id="avatar-select" v-model="selectedAvatar">
@@ -32,7 +31,6 @@
       </div>
     </div>
 
-    <!-- Button to toggle 'repeat' -->
     <div class="StreamingAvatar--controls">
       <div class="StreamingAvatar--repeat">
         <label>
