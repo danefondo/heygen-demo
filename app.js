@@ -1,0 +1,94 @@
+require("dotenv").config();
+const express = require("express");
+const fetch = require("node-fetch");
+const path = require("path");
+
+const app = express();
+app.use(express.json());
+
+const HEYGEN_V2 = "https://api.heygen.com/v2";
+const HEYGEN_API_URL = process.env.HEYGEN_API_URL || "https://api.heygen.com/v1";
+const KEY = process.env.HEYGEN_API_KEY;
+
+// ——— 1) List available streaming avatars ——
+app.get("/api/avatars", async (_, res) => {
+  try {
+    console.log("Fetching avatars");
+    const response = await fetch(`${HEYGEN_API_URL}/streaming/avatar.list`, {
+      headers: { "X-Api-Key": KEY },
+    });
+    const { data } = await response.json();
+    console.log("Avatars fetched", data);
+    // data.data is an array of { avatar_id, ... }
+    res.json({ avatars: data });
+  } catch (err) {
+    console.error("Avatar list error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Could not fetch avatar list" });
+  }
+});
+
+// ——— 2) Generate streaming token ——
+app.get("/api/token", async (req, res) => {
+  try {
+    console.log("Generating token");
+    const response = await fetch(`${HEYGEN_API_URL}/streaming.create_token`, {
+      method: "POST",
+      headers: { "X-Api-Key": KEY },
+    });
+    const { data } = await response.json();
+    console.log("Token generated", data);
+    res.json({ token: data.token });
+  } catch (err) {
+    console.error("Token error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Token generation failed" });
+  }
+});
+
+// ——— 3) Video generation endpoints ——
+app.post("/api/videos", async (req, res) => {
+  try {
+    const payload = {
+      video_inputs: [
+        {
+          character: { type: "avatar", avatar_id: "default", avatar_style: "normal" },
+          voice: { type: "text", input_text: "Hello from HeyGen video API!" },
+        },
+      ],
+      dimension: { width: 320, height: 480 },
+    };
+    const response = await fetch(`${HEYGEN_API_URL}/video/generate`, {
+      method: "POST",
+      headers: { "X-Api-Key": KEY },
+      body: JSON.stringify(payload),
+    });
+    const { data } = await response.json();
+    res.json({ video_id: data.data.video_id });
+  } catch (err) {
+    console.error("Video generate error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Video creation failed" });
+  }
+});
+
+app.get("/api/videos/:id", async (req, res) => {
+  try {
+    const response = await fetch(`${HEYGEN_API_URL}/video_status.get?video_id=${req.params.id}`, {
+      headers: { "X-Api-Key": KEY },
+    });
+    const { data } = await response.json();
+    res.json(data.data);
+  } catch (err) {
+    console.error("Video status error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Video status failed" });
+  }
+});
+
+// ——— 4) Serve built Vue + SPA fallback ——
+const clientDist = path.join(__dirname, "heygen-client", "dist");
+app.use(express.static(clientDist));
+app.get("*", (_, res) => {
+  res.sendFile(path.join(clientDist, "index.html"));
+});
+
+// ——— 5) Start server ——
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
