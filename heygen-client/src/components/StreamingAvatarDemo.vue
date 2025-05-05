@@ -91,9 +91,8 @@
             <div class="StreamingAvatar--console-log-message">{{ log.message }}</div>
           </div>
         </div>
-
-        <div v-if="isGeneratingVideo">Generating video...</div>
       </div>
+      <div v-if="isGeneratingVideo">Generating video...</div>
     </div>
   </div>
 </template>
