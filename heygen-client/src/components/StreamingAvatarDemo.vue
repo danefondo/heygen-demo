@@ -385,7 +385,10 @@ export default {
 
         try {
           const res = await fetch(`/api/videos/${this.videoId}`);
-          const { status, video_url } = await res.json();
+          const result = await res.json();
+
+          const status = result?.data?.status;
+          const video_url = result?.data?.video_url;
 
           if (status === "completed") {
             this.videoUrl = video_url;
