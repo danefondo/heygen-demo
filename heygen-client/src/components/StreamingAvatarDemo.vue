@@ -1,54 +1,98 @@
 <template>
   <div class="StreamingAvatar">
-    <h2>Streaming Avatar</h2>
-
-    <div v-if="avatars.length && !started" style="margin-bottom: 1rem">
-      <label for="avatar-select">Pick an avatar:</label>
-      <select id="avatar-select" v-model="selectedAvatar">
-        <option v-for="a in avatars" :key="a.avatar_id" :value="a.avatar_id">
-          {{ a.avatar_id }}
-        </option>
-      </select>
+    <div class="StreamingAvatar--tabs">
+      <button :class="['tab-btn', { active: currentDemo === 'streaming' }]" @click="setCurrentDemo('streaming')">Streaming Avatar API Demo</button>
+      <button :class="['tab-btn', { active: currentDemo === 'video' }]" @click="setCurrentDemo('video')">Pre-Rendered Video Generator API Demo</button>
     </div>
 
-    <div class="StreaminAvatar--container">
-      <video ref="video" autoplay playsinline style="border-radius: 15px; width: 320px; height: 480px; background: #000"></video>
+    <div v-if="currentDemo === 'streaming'">
+      <h2>Streaming Avatar</h2>
 
-      <div class="StreamingAvatar--console" ref="consoleContainer">
-        <div class="StreamingAvatar--console-title">Console</div>
-        <div class="StreamingAvatar--console-logs" v-for="log in logs" :key="log.id">
-          <div class="StreamingAvatar--console-log-message">{{ log.message }}</div>
+      <div class="StreamingAvatar--picker" v-if="avatars.length && !started" style="margin-bottom: 1rem">
+        <label for="avatar-select">Pick an avatar:</label>
+        <select id="avatar-select" v-model="selectedAvatar">
+          <option v-for="a in avatars" :key="a.avatar_id" :value="a.avatar_id">
+            {{ a.avatar_id }}
+          </option>
+        </select>
+      </div>
+
+      <div class="StreaminAvatar--container">
+        <video ref="video" autoplay playsinline style="border-radius: 15px; width: 320px; height: 480px; background: #000"></video>
+
+        <div class="StreamingAvatar--console" ref="consoleContainer">
+          <div class="StreamingAvatar--console-title">Console</div>
+          <div class="StreamingAvatar--console-logs" v-for="log in logs" :key="log.id">
+            <div class="StreamingAvatar--console-log-message">{{ log.message }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="StreamingAvatar--controls">
+        <button @click="startStreamingSession" :disabled="isLoadingSession || started">Start Avatar</button>
+        <button @click="stopStreamingSession" :disabled="!started">Stop Avatar</button>
+        <div class="StreamingAvatar--chat">
+          <input @keyup.enter="handleSpeak" type="text" placeholder="Enter text" v-model="avatarNextText" />
+          <button @click="handleSpeak" :disabled="!started">Send</button>
+        </div>
+      </div>
+
+      <div class="StreamingAvatar--controls">
+        <div class="StreamingAvatar--repeat">
+          <label>
+            <input type="checkbox" v-model="repeat" class="repeat-checkbox" />
+            <span class="repeat-label">
+              Toggle to have avatar repeat your text
+              <span v-if="repeat" class="repeat-status on">ON</span>
+              <span v-else class="repeat-status off">OFF</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="StreamingAvatarStatus">
+        <div v-if="isLoadingSession">Loading{{ loadingDots }}</div>
+        <div v-else-if="started">
+          <div>Session ID: {{ sessionId }}</div>
+          <div>Avatar: {{ selectedAvatar }}</div>
         </div>
       </div>
     </div>
-
-    <div class="StreamingAvatar--controls">
-      <button @click="startStreamingSession" :disabled="isLoadingSession || started">Start Avatar</button>
-      <button @click="stopStreamingSession" :disabled="!started">Stop Avatar</button>
-      <div class="StreamingAvatar--chat">
-        <input @keyup.enter="handleSpeak" type="text" placeholder="Enter text" v-model="avatarNextText" />
-        <button @click="handleSpeak" :disabled="!started">Send</button>
+    <div v-else-if="currentDemo === 'video'">
+      <h2>Video Generator</h2>
+      <div class="VideoGeneratorDemo">
+        <div class="StreamingAvatar--controls">
+          <input @keyup.enter="generateVideo" type="text" placeholder="Enter text" v-model="avatarNextText" />
+          <div class="StreamingAvatar--chat">
+            <button @click="generateVideo" :disabled="isGeneratingVideo">Generate video</button>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div class="StreamingAvatar--controls">
-      <div class="StreamingAvatar--repeat">
-        <label>
-          <input type="checkbox" v-model="repeat" class="repeat-checkbox" />
-          <span class="repeat-label">
-            Toggle to have avatar repeat your text
-            <span v-if="repeat" class="repeat-status on">ON</span>
-            <span v-else class="repeat-status off">OFF</span>
-          </span>
-        </label>
+      <div class="StreamingAvatar--picker" v-if="videoAvatars.length && !started" style="margin-bottom: 1rem">
+        <label for="avatar-select">Pick an avatar:</label>
+        <select id="avatar-select" v-model="selectedAvatar">
+          <option v-for="a in videoAvatars" :key="a.avatar_id" :value="a.avatar_id">{{ a.avatar_name }}</option>
+        </select>
       </div>
-    </div>
 
-    <div class="StreamingAvatarStatus">
-      <div v-if="isLoadingSession">Loading{{ loadingDots }}</div>
-      <div v-else-if="started">
-        <div>Session ID: {{ sessionId }}</div>
-        <div>Avatar: {{ selectedAvatar }}</div>
+      <div class="StreamingAvatar--picker" v-if="voices.length && !started" style="margin-bottom: 1rem">
+        <label for="voice-select">Pick a voice:</label>
+        <select id="voice-select" v-model="selectedVoice">
+          <option v-for="v in voices" :key="v.voice_id" :value="v.voice_id">{{ v.name || v.voice_id }} ({{ v.language }}, {{ v.gender }})</option>
+        </select>
+      </div>
+
+      <div class="StreaminAvatar--container">
+        <video ref="video2" autoplay playsinline controls style="border-radius: 15px; width: 320px; height: 480px; background: #000" />
+
+        <div class="StreamingAvatar--console" ref="consoleContainer">
+          <div class="StreamingAvatar--console-title">Console</div>
+          <div class="StreamingAvatar--console-logs" v-for="log in logs" :key="log.id">
+            <div class="StreamingAvatar--console-log-message">{{ log.message }}</div>
+          </div>
+        </div>
+
+        <div v-if="isGeneratingVideo">Generating video...</div>
       </div>
     </div>
   </div>
@@ -63,7 +107,10 @@ export default {
     return {
       /** Avatar selection data */
       avatars: [],
+      videoAvatars: [],
+      voices: [],
       selectedAvatar: null,
+      selectedVoice: null,
 
       /** UX process data */
       isLoadingSession: false,
@@ -80,6 +127,14 @@ export default {
       /** Avatar interaction process */
       avatarNextText: "",
       repeat: false,
+
+      /** Demo setup */
+      currentDemo: "streaming",
+
+      /** Video generation process */
+      videoId: null,
+      videoUrl: null,
+      isGeneratingVideo: false,
     };
   },
   async mounted() {
@@ -91,11 +146,37 @@ export default {
         this.addConsoleLog("Fetching avatars...");
         const response = await fetch("/api/avatars");
         const { avatars } = await response.json();
-        this.avatars = avatars;
-        if (this.avatars.length) this.selectedAvatar = avatars[0].avatar_id;
-        this.addConsoleLog("Avatars fetched and loaded", avatars);
+        this.avatars = avatars || [];
+        if (this.avatars.length) this.selectedAvatar = this.avatars[0].avatar_id;
+        this.addConsoleLog(`Avatars fetched and loaded ${this.avatars.length}`);
       } catch (err) {
-        console.error("Failed to load avatars:", err);
+        this.addConsoleLog(`Failed to load avatars: ${err}`);
+      }
+    },
+
+    async getAvailableVideoAvatars() {
+      try {
+        this.addConsoleLog("Fetching video avatars...");
+        const response = await fetch("/api/video-avatars");
+        const { avatars } = await response.json();
+        this.videoAvatars = avatars || [];
+        if (this.videoAvatars.length) this.selectedAvatar = this.videoAvatars[0].avatar_id;
+        this.addConsoleLog(`Video avatars fetched and loaded ${this.videoAvatars.length}`);
+      } catch (err) {
+        this.addConsoleLog(`Failed to load video avatars: ${err}`);
+      }
+    },
+
+    async getAvailableVoices() {
+      try {
+        this.addConsoleLog("Fetching voices...");
+        const response = await fetch("/api/voices");
+        const { voices } = await response.json();
+        this.voices = voices || [];
+        if (this.voices.length) this.selectedVoice = voices[0].voice_id;
+        this.addConsoleLog(`Voices fetched and loaded ${voices.length}`);
+      } catch (err) {
+        this.addConsoleLog(`Failed to load voices: ${err}`);
       }
     },
 
@@ -164,12 +245,24 @@ export default {
       this.addConsoleLog("Streaming session stopped");
     },
 
-    resetStreamingData() {
-      this.$refs.video.srcObject = null;
+    async resetStreamingData() {
+      if (this.$refs.video) {
+        this.$refs.video.srcObject = null;
+      }
+      if (this.$refs.video2) {
+        this.$refs.video2.srcObject = null;
+      }
+      if (this.avatar) {
+        await this.avatar.stopAvatar();
+      }
       this.avatar = null;
       this.sessionData = null;
       this.sessionId = null;
       this.started = false;
+      this.videoId = null;
+      this.videoUrl = null;
+      this.isGeneratingVideo = false;
+      this.avatarNextText = "";
     },
 
     handleStreamReady(stream) {
@@ -229,9 +322,144 @@ export default {
       this.avatarNextText = "";
     },
 
+    /** Video generation methods */
+    async generateVideo() {
+      this.isGeneratingVideo = true;
+      this.videoUrl = null;
+
+      if (this.avatarNextText.trim() === "") {
+        this.addConsoleLog("Text is empty");
+        this.isGeneratingVideo = false;
+        return;
+      }
+
+      this.addConsoleLog("Requesting video generation...");
+
+      try {
+        const res = await fetch("/api/videos/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            avatar_id: this.selectedAvatar,
+            voice_id: this.selectedVoice,
+            input_text: this.avatarNextText,
+          }),
+        });
+        const { data, error } = await res.json();
+        if (error || !data?.video_id) {
+          this.addConsoleLog("❌ Failed to get video ID.");
+          this.isGeneratingVideo = false;
+          return;
+        }
+        this.addConsoleLog("Request complete, beginning polling for video generation status...", data);
+        this.videoId = data.video_id;
+        this.pollVideoStatus();
+      } catch (err) {
+        console.error("Video generation failed:", err);
+        this.isGeneratingVideo = false;
+      }
+    },
+
+    async pollVideoStatus() {
+      const POLL_INTERVAL_MS = 5000;
+      const TIMEOUT_MS = 10 * 60 * 1000;
+      const startTime = Date.now();
+      let lastCheckTime = 0;
+
+      const poll = async () => {
+        const elapsed = Date.now() - startTime;
+
+        if (elapsed > TIMEOUT_MS) {
+          this.addConsoleLog("❌ Video generation timed out.");
+          this.isGeneratingVideo = false;
+          return;
+        }
+
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        const formatted = `${minutes}m${seconds.toString().padStart(2, "0")}s`;
+
+        if (Date.now() - lastCheckTime >= POLL_INTERVAL_MS) {
+          this.addConsoleLog(`${formatted} elapsed – checking video status...`);
+          lastCheckTime = Date.now();
+        }
+
+        try {
+          const res = await fetch(`/api/videos/${this.videoId}`);
+          const { status, video_url } = await res.json();
+
+          if (status === "completed") {
+            this.videoUrl = video_url;
+            this.addConsoleLog(`✅ Video ready after ${formatted}!`);
+
+            this.isGeneratingVideo = false;
+
+            const videoEl = this.$refs.video2;
+            if (videoEl) {
+              videoEl.srcObject = null; // stop any streaming
+              videoEl.src = video_url;
+              videoEl.load();
+              videoEl.play().catch(console.error);
+            }
+
+            return;
+          }
+
+          this.addConsoleLog(`🟡 Video not ready yet, checking again in ${POLL_INTERVAL_MS / 1000}s...`);
+
+          setTimeout(poll, POLL_INTERVAL_MS);
+        } catch (err) {
+          console.error("Polling failed:", err);
+          this.addConsoleLog("❌ Error polling video status.");
+          this.isGeneratingVideo = false;
+        }
+      };
+
+      await poll();
+    },
+
+    animateCountdown(durationMs, callback) {
+      let seconds = durationMs / 1000;
+      const countdown = setInterval(() => {
+        this.addConsoleLog(`...${seconds}`);
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(countdown);
+          callback();
+        }
+      }, 1000);
+    },
+
     /** UI METHODS */
+    async setCurrentDemo(demo) {
+      this.resetStreamingData();
+      this.logs = [];
+      this.addConsoleLog(`Switched to ${demo} API demo`);
+      this.currentDemo = demo;
+      if (demo === "video") {
+        /** for each, if voices or video avatars emtpy only then fetch */
+        if (this.voices.length === 0) await this.getAvailableVoices();
+        if (this.videoAvatars.length === 0) await this.getAvailableVideoAvatars();
+      } else {
+        if (this.avatars.length === 0) await this.getAvailableAvatars();
+      }
+    },
+
     addConsoleLog(message) {
-      this.logs.push({ id: this.logs.length, message });
+      const now = new Date();
+
+      const timestamp = now.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      const id = this.logs.length;
+
+      this.logs.push({
+        id,
+        message: `[${timestamp}] ${message}`,
+      });
     },
 
     startLoadingAnimation() {
@@ -371,6 +599,39 @@ export default {
 .repeat-status.off {
   background: #ddd;
   color: #555;
+}
+.StreamingAvatar--tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.StreamingAvatar--picker select {
+  margin-left: 5px;
+  border-color: #ddd;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.tab-btn {
+  padding: 8px 18px;
+  border: 1px solid #0074d9;
+  background: #fff;
+  color: #0074d9;
+  border-radius: 6px 6px 0 0;
+  font-size: 16px;
+  font-family: "Helvetica";
+  cursor: pointer;
+  outline: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab-btn.active {
+  background: #0074d9;
+  color: #fff;
+  font-weight: bold;
+  border-bottom: 2px solid #fff;
+  z-index: 1;
 }
 button {
   margin: 0px 3px;

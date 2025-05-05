@@ -27,6 +27,38 @@ app.get("/api/avatars", async (_, res) => {
   }
 });
 
+app.get("/api/video-avatars", async (_, res) => {
+  try {
+    console.log("Fetching video generation avatars");
+    const response = await fetch("https://api.heygen.com/v2/avatars", {
+      headers: { "X-Api-Key": KEY },
+    });
+    const { data } = await response.json();
+    const avatars = data.avatars || [];
+    console.log("Video avatars fetched", avatars);
+    res.json({ avatars });
+  } catch (err) {
+    console.error("Video avatar list error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Could not fetch video avatar list" });
+  }
+});
+
+app.get("/api/voices", async (_, res) => {
+  try {
+    console.log("Fetching voices");
+    const response = await fetch("https://api.heygen.com/v2/voices", {
+      headers: { "X-Api-Key": KEY },
+    });
+    const { data } = await response.json();
+    const voices = data.voices || [];
+    console.log("Voices fetched", voices);
+    res.json({ voices });
+  } catch (err) {
+    console.error("Voice list error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Could not fetch voice list" });
+  }
+});
+
 // ——— 2) Generate streaming token ——
 app.get("/api/token", async (req, res) => {
   try {
@@ -42,6 +74,54 @@ app.get("/api/token", async (req, res) => {
     console.error("Token error:", err.response?.data || err.message);
     res.status(500).json({ error: "Token generation failed" });
   }
+});
+
+app.post("/api/videos/create", async (req, res) => {
+  const { avatar_id, voice_id, input_text } = req.body;
+
+  const response = await fetch("https://api.heygen.com/v2/video/generate", {
+    method: "POST",
+    headers: {
+      "X-Api-Key": process.env.HEYGEN_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      video_inputs: [
+        {
+          character: {
+            type: "avatar",
+            avatar_id,
+            avatar_style: "normal",
+          },
+          voice: {
+            type: "text",
+            input_text,
+            voice_id,
+          },
+          background: { type: "color", value: "#FFFFFF" },
+        },
+      ],
+      dimension: { width: 360, height: 640 },
+      title: "Generated Video",
+    }),
+  });
+
+  const data = await response.json();
+  console.log("Video generated", data);
+  res.json(data);
+});
+
+app.get("/api/videos/:video_id", async (req, res) => {
+  console.log("Fetching video status", req.params);
+  const { video_id } = req.params;
+
+  const response = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${video_id}`, {
+    headers: { "X-Api-Key": process.env.HEYGEN_API_KEY },
+  });
+
+  const data = await response.json();
+  console.log("Video status fetched", data);
+  res.json(data);
 });
 
 // ——— 3) Video generation endpoints ——
