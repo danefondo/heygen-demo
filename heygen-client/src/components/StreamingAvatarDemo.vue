@@ -32,12 +32,12 @@
         <button @click="startStreamingSession" :disabled="isLoadingSession || started">Start Avatar</button>
         <button @click="stopStreamingSession" :disabled="!started">Stop Avatar</button>
         <div class="StreamingAvatar--chat">
-          <input @keyup.enter="handleSpeak" type="text" placeholder="Enter text" v-model="avatarNextText" />
+          <input class="StreamingAvatar--chat--input" @keyup.enter="handleSpeak" type="text" placeholder="Enter text" v-model="avatarNextText" />
           <button @click="handleSpeak" :disabled="!started">Send</button>
         </div>
       </div>
 
-      <div class="StreamingAvatar--controls">
+      <div class="StreamingAvatar--toggle-container">
         <div class="StreamingAvatar--repeat">
           <label>
             <input type="checkbox" v-model="repeat" class="repeat-checkbox" />
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <div class="StreamingAvatarStatus">
+      <div class="StreamingAvatarStatus" v-if="isLoadingSession || started">
         <div v-if="isLoadingSession">Loading{{ loadingDots }}</div>
         <div v-else-if="started">
           <div>Session ID: {{ sessionId }}</div>
@@ -60,14 +60,7 @@
     </div>
     <div v-else-if="currentDemo === 'video'">
       <h2>Video Generator</h2>
-      <div class="VideoGeneratorDemo">
-        <div class="StreamingAvatar--controls">
-          <input @keyup.enter="generateVideo" type="text" placeholder="Enter text" v-model="avatarNextText" />
-          <div class="StreamingAvatar--chat">
-            <button @click="generateVideo" :disabled="isGeneratingVideo">Generate video</button>
-          </div>
-        </div>
-      </div>
+      <div class="VideoGeneratorDemo"></div>
       <div class="StreamingAvatar--picker" v-if="videoAvatars.length && !started" style="margin-bottom: 1rem">
         <label for="avatar-select">Pick an avatar:</label>
         <select id="avatar-select" v-model="selectedAvatar">
@@ -92,7 +85,13 @@
           </div>
         </div>
       </div>
-      <div v-if="isGeneratingVideo">Generating video...</div>
+      <div class="StreamingAvatar--controls">
+        <input class="StreamingAvatar--chat--input" @keyup.enter="generateVideo" type="text" placeholder="Enter text" v-model="avatarNextText" />
+        <div class="StreamingAvatar--chat">
+          <button @click="generateVideo" :disabled="isGeneratingVideo">Generate video</button>
+        </div>
+      </div>
+      <div class="StreamingAvatarStatus" v-if="isGeneratingVideo">Generating video...</div>
     </div>
   </div>
 </template>
@@ -193,6 +192,11 @@ export default {
     },
 
     async startStreamingSession() {
+      if (this.avatars.length === 0) {
+        alert("⚠️ Please wait until avatars are loaded");
+        return;
+      }
+
       this.addConsoleLog("Initiating streaming session...");
       this.isLoadingSession = true;
       const token = await this.fetchAccessToken();
@@ -323,6 +327,12 @@ export default {
 
     /** Video generation methods */
     async generateVideo() {
+      /** Ensure that voices and video avatars are loaded otherwise alert to prompt user to wait */
+      if (this.voices.length === 0 || this.videoAvatars.length === 0) {
+        alert("⚠️ Please wait until both voices and video avatars are loaded");
+        return;
+      }
+
       this.isGeneratingVideo = true;
       this.videoUrl = null;
 
@@ -346,7 +356,7 @@ export default {
         });
         const { data, error } = await res.json();
         if (error || !data?.video_id) {
-          this.addConsoleLog("❌ Failed to get video ID.");
+          this.addConsoleLog("Failed to get video ID.");
           this.isGeneratingVideo = false;
           return;
         }
@@ -360,8 +370,8 @@ export default {
     },
 
     async pollVideoStatus() {
-      const POLL_INTERVAL_MS = 5000;
-      const TIMEOUT_MS = 10 * 60 * 1000;
+      const POLL_INTERVAL_MS = 10000;
+      const TIMEOUT_MS = 20 * 60 * 1000;
       const startTime = Date.now();
       let lastCheckTime = 0;
 
@@ -369,7 +379,7 @@ export default {
         const elapsed = Date.now() - startTime;
 
         if (elapsed > TIMEOUT_MS) {
-          this.addConsoleLog("❌ Video generation timed out.");
+          this.addConsoleLog("Video generation timed out.");
           this.isGeneratingVideo = false;
           return;
         }
@@ -412,7 +422,7 @@ export default {
           setTimeout(poll, POLL_INTERVAL_MS);
         } catch (err) {
           console.error("Polling failed:", err);
-          this.addConsoleLog("❌ Error polling video status.");
+          this.addConsoleLog("Error polling video status.");
           this.isGeneratingVideo = false;
         }
       };
@@ -434,16 +444,31 @@ export default {
 
     /** UI METHODS */
     async setCurrentDemo(demo) {
+      if (this.currentDemo === demo) return;
       this.resetStreamingData();
       this.logs = [];
       this.addConsoleLog(`Switched to ${demo} API demo`);
       this.currentDemo = demo;
       if (demo === "video") {
-        /** for each, if voices or video avatars emtpy only then fetch */
-        if (this.voices.length === 0) await this.getAvailableVoices();
-        if (this.videoAvatars.length === 0) await this.getAvailableVideoAvatars();
+        if (this.voices.length === 0) {
+          await this.getAvailableVoices();
+        } else {
+          this.addConsoleLog("Voices already fetched");
+        }
+        if (this.videoAvatars.length === 0) {
+          await this.getAvailableVideoAvatars();
+        } else {
+          this.addConsoleLog("Video avatars already fetched");
+        }
+        this.selectedAvatar = this.videoAvatars[0].avatar_id;
+        this.selectedVoice = this.voices[0].voice_id;
       } else {
-        if (this.avatars.length === 0) await this.getAvailableAvatars();
+        if (this.avatars.length === 0) {
+          await this.getAvailableAvatars();
+        } else {
+          this.addConsoleLog("Avatars already fetched");
+        }
+        this.selectedAvatar = this.avatars[0].avatar_id;
       }
     },
 
@@ -537,27 +562,52 @@ export default {
   color: #555555;
 }
 .StreamingAvatar--controls {
-  margin: 10px;
+  margin-top: 10px;
   display: flex;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+}
+.StreamingAvatar--toggle-container {
+  margin-top: 10px;
+  display: flex;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+}
+.StreamingAvatarStatus {
+  margin-top: 10px;
+  display: flex;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+  font-size: 15px;
+  font-family: "Helvetica";
+  color: #333;
+}
+.StreamingAvatarStatus > div {
+  padding: 5px;
+}
+.StreamingAvatarStatus > div > div {
+  margin: 2.5px 0;
 }
 .StreamingAvatar--chat {
   margin-left: auto;
 }
-.StreamingAvatar--chat input {
+.StreamingAvatar--chat--input {
   box-sizing: border-box;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  border: 1px solid #aaaaaa;
+  border-radius: 7px;
   height: 33.5px;
   width: 340px;
   padding: 5px;
 }
 .StreamingAvatar--repeat {
   display: flex;
-  margin-top: 20px;
   align-items: center;
-  border: 1px solid #ddd;
   padding: 5px;
-  border-radius: 5px;
+  border-radius: 7px;
   cursor: pointer;
 }
 
@@ -617,9 +667,9 @@ export default {
 
 .tab-btn {
   padding: 8px 18px;
-  border: 1px solid #0074d9;
+  border: 1px solid #1c1c1c;
   background: #fff;
-  color: #0074d9;
+  color: #000000;
   border-radius: 6px 6px 0 0;
   font-size: 16px;
   font-family: "Helvetica";
@@ -629,10 +679,10 @@ export default {
 }
 
 .tab-btn.active {
-  background: #0074d9;
+  background: #000000;
   color: #fff;
   font-weight: bold;
-  border-bottom: 2px solid #fff;
+  border-bottom: 2px solid #000;
   z-index: 1;
 }
 button {

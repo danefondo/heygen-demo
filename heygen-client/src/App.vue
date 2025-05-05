@@ -2,13 +2,11 @@
   <div class="container">
     <h1>HeyGen Demo</h1>
     <StreamingAvatarDemo />
-    <!--     <VideoApiDemo class="panel" /> -->
   </div>
 </template>
 
 <script>
 import StreamingAvatarDemo from "./components/StreamingAvatarDemo.vue";
-/* import VideoApiDemo from "./components/VideoApiDemo.vue"; */
 export default { components: { StreamingAvatarDemo } };
 </script>
 
