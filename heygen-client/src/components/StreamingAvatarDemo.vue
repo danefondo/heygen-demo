@@ -218,13 +218,6 @@ export default {
         this.avatar.on(StreamingEvents.AVATAR_STOP_TALKING, () => {
           this.addConsoleLog("Avatar stopped talking");
         });
-        /*         this.avatar.on(StreamingEvents.SESSION_CREATED, ({ session_id }) => {
-          this.avatar.speak({
-            sessionId: session_id,
-            text: "Hire Robert Foenix and he will make sure HeyGen customers are always delighted!",
-            task_type: TaskType.REPEAT,
-          });
-        }); */
 
         this.addConsoleLog("Creating avatar...");
         this.sessionData = await this.avatar.createStartAvatar({
