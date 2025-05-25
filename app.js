@@ -7,6 +7,7 @@ import cors from 'cors';
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const HEYGEN_V2 = "https://api.heygen.com/v2";
 const HEYGEN_API_URL = process.env.HEYGEN_API_URL || "https://api.heygen.com/v1";
