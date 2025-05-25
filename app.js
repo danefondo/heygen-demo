@@ -356,5 +356,5 @@ app.get("*", (_, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);
-    getPhotoAvatar("904ad704bbab4a0196905db28670d173");
+    /* getPhotoAvatar("904ad704bbab4a0196905db28670d173"); */
 });
