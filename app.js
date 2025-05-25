@@ -3,7 +3,7 @@ const express = require("express");
 const fetch = require("node-fetch");
 const path = require("path");
 const fs = require("fs");
-import cors from 'cors';
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
