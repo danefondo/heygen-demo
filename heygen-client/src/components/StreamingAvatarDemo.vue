@@ -223,7 +223,7 @@ export default {
                 this.addConsoleLog("Creating avatar...");
                 this.sessionData = await this.avatar.createStartAvatar({
                     quality: AvatarQuality.High,
-                    avatarName: "0b21e8126e394874aaafd023d59e0d5a",
+                    avatarName: this.selectedAvatar,
 /*                     voice: {
                         voice_id: "df1b0eaaf0cb4229b238ec530828ea83",
                     },
