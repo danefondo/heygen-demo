@@ -447,10 +447,7 @@ async function getTransparentStudioAvatars() {
 }
 
 async function generateVideoFromTemplate() {
-    const content =
-        "The FIFA Club World Cup group stage fires up as Real Madrid faces Al-Hilal Saudi FC at Hard Rock Stadium in Miami Gardens. Champions of Spain take on Asia’s top side in a matchup that could set the tone for Group H. Victory tonight means Real Madrid clinches the top spot—unless Pachuca spring an upset—while defeat could leave the Spanish giants at risk of early elimination. For Al-Hilal, a stunning win would place them at the top or second, and a draw keeps both sides in the mix depending on Pachuca’s result. \n\nCurrent form is electric for both teams. Real Madrid has won four of their last five, including a 2-0 triumph over Real Sociedad. Meanwhile, Al-Hilal rides in with four wins and a draw from their last five league games. When these squads met in the 2023 final, Real Madrid edged Al-Hilal 5-3, hinting at another high-scoring battle. \n\nPrediction markets give Madrid a commanding edge with a 77 to 80 percent implied win probability. Bookmakers also forecast goals, with over 1.5 goals extremely likely. Expect fireworks and plenty at stake—keep an eye on group standings throughout. Enjoy this top-tier clash!";
-    /* const url = "https://img.theapi.app/temp/32f079a4-31fa-49f9-866e-717165b449cc.mp4"; */
-    fetch("https://api.heygen.com/v2/template/de534756accb46b0839b3892985fadd9/generate", {
+    fetch("https://api.heygen.com/v2/template/f52003c9d1294e2fb919970dd02ed162/generate", {
         method: "POST",
         headers: {
             "X-Api-Key": KEY,
@@ -458,25 +455,24 @@ async function generateVideoFromTemplate() {
         },
         body: JSON.stringify({
             caption: true,
-            title: "Fixture Report",
+            title: "Some Awesome Title",
             variables: {
-                script: {
-                    name: "script",
+                script_en: {
+                    name: "script_en",
                     type: "text",
                     properties: {
-                        content: content,
+                        content: "Hey there, how are you today?",
                     },
                 },
-                /*                 home_team_logo: {
-                    name: "home_team_logo",
-                    type: "image",
+                script1_voice: {
+                    name: "script1_voice",
+                    type: "voice",
                     properties: {
-                        url: url,
-                        asset_id: null,
-                        fit: "contain",
+                        voice_id: "8b92884579014f8e8147836bbd0c13ca",
                     },
-                }, */
+                },
             },
+            dimension: { width: 1280, height: 720 },
         }),
     })
         .then((res) => res.json())
@@ -553,6 +549,29 @@ async function POST() {
     }
 }
 
+async function translateVideo() {
+    /* https://www.youtube.com/shorts/WY73exaVpyw */
+    const url = "https://api.heygen.com/v2/video_translate";
+    const options = {
+        method: "POST",
+        headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "x-api-key": "ODQ3ODRlOWEyM2RkNDlhYThjMmFkNTM2NTY3Mjg3YjktMTc1MjcxMjAyMA==",
+        },
+        body: JSON.stringify({
+            video_url: "https://www.youtube.com/watch?v=gt1fMvPHz3c&ab_channel=10SecondCollege",
+            title: "Test Video",
+            output_language: "French",
+            speaker_num: 0,
+        }),
+    };
+    fetch(url, options)
+        .then((res) => res.json())
+        .then((json) => console.log(json))
+        .catch((err) => console.error(err));
+}
+
 async function generatePaulVideo() {
     // 1) HeyGen endpoint and authentication
     const HEYGEN_API_KEY = KEY;
@@ -571,40 +590,51 @@ async function generatePaulVideo() {
         "Content-Type": "application/json",
     };
 
-    // 4) Build the payload (minimal single-scene example)
+    // Helper function to generate optimized video inputs
+    const baseText =
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultricies diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. ";
+
+    function generateDummyText() {
+        return baseText.repeat(Math.ceil(4500 / baseText.length)).slice(0, 4500);
+    }
+
+    const items = Array.from({ length: 50 }, () => ({
+        character: {
+            type: "avatar",
+            avatar_id: "Annie_expressive12_public",
+            avatar_style: "normal",
+        },
+        voice: {
+            input_text: generateDummyText(),
+            type: "text",
+            voice_id: "73c0b6a2e29d4d38aca41454bf58c955",
+        },
+    }));
+
     const payload = {
-        caption: true,
+        title: "myVideo",
         dimension: {
-            width: 720,
-            height: 1280,
+            width: 1280,
+            height: 720,
         },
         video_inputs: [
             {
                 character: {
                     type: "avatar",
-                    avatar_id: "935c041bdb1743639f9219ab59566b79",
-                    avatar_style: "normal",
-                    scale: 1.0,
-                    offset: {
-                        x: 0.1,
-                        y: 0.2,
-                    },
+                    avatar_id: "553553ed1b3a45549c6e28b461a88fa6",
+                    matting: true,
                 },
                 voice: {
                     type: "text",
-                    input_text: "Some fantastic text right here.",
-                    voice_id: "8cb047e538974d19aabeaea407227192",
-                    speed: 1.1,
+                    voice_id: "fbcbe811534448e89a175fecb8b17109",
+                    input_text: "Hello there, how are you doing today?",
                 },
                 background: {
-                    type: "video",
-                    url: "https://img.theapi.app/temp/32f079a4-31fa-49f9-866e-717165b449cc.mp4",
-                    fit: "cover",
-                    play_style: "loop",
+                    type: "color",
+                    value: "#0000ff",
                 },
             },
         ],
-        title: "2025-06-18T17:00:28.027-04:00",
     };
 
     // 5) Send the request to HeyGen
@@ -648,6 +678,213 @@ async function getVideoStatus() {
     console.log("Video status fetched", data);
 }
 
+async function getDefaultAudioIDFromListOfAvatars() {
+    const avatars = {
+        Conrad: {
+            avatar_id: "conrad_sofa_front",
+            voice_id: "5403a745860347beb7d342e07eef33fb",
+        },
+        Gala: {
+            avatar_id: "Gala_sitting_office_front",
+            voice_id: "gala_voice_id_here",
+        },
+        Raul: {
+            avatar_id: "Raul_sitting_casualsofawithipad_front",
+            voice_id: "raul_voice_id_here",
+        },
+        Leos: {
+            avatar_id: "Leos_sitting_office_front",
+            voice_id: "leos_voice_id_here",
+        },
+        Aubrey: {
+            avatar_id: "Aubrey_standing_night_scene_front",
+            voice_id: "aubrey_voice_id_here",
+        },
+        Bojan: {
+            avatar_id: "Bojan_sitting_businesstraining_front",
+            voice_id: "bojan_voice_id_here",
+        },
+        Chloe: {
+            avatar_id: "Chloe_standing_lounge_front",
+            voice_id: "chloe_voice_id_here",
+        },
+        Emilia: {
+            avatar_id: "Emilia_sitting_outdooryoga_front",
+            voice_id: "emilia_voice_id_here",
+        },
+        Amelia: {
+            avatar_id: "Amelia_sitting_yoga_front",
+            voice_id: "amelia_voice_id_here",
+        },
+        Gerardo: {
+            avatar_id: "Gerardo_standing_outdoorsport_front",
+            voice_id: "gerardo_voice_id_here",
+        },
+        June: {
+            avatar_id: "June_HR_public",
+            voice_id: "june_voice_id_here",
+        },
+        Kavya: {
+            avatar_id: "Kavya_standing_indoor_front",
+            voice_id: "kavya_voice_id_here",
+        },
+        Milena: {
+            avatar_id: "Milena_standing_sofa_front",
+            voice_id: "milena_voice_id_here",
+        },
+        Miles: {
+            avatar_id: "Miles_standing_outdoor_front",
+            voice_id: "miles_voice_id_here",
+        },
+        Miyu: {
+            avatar_id: "Miyu_sitting_sofacasual_front",
+            voice_id: "miyu_voice_id_here",
+        },
+        Rasmus: {
+            avatar_id: "Rasmus_sitting_lounge_front",
+            voice_id: "rasmus_voice_id_here",
+        },
+        Ren: {
+            avatar_id: "Ren_sitting_office_front",
+            voice_id: "ren_voice_id_here",
+        },
+        Timothy: {
+            avatar_id: "Timothy_sitting_office_front",
+            voice_id: "timothy_voice_id_here",
+        },
+        Vernon: {
+            avatar_id: "Vemon_standing_office_front",
+            voice_id: "vernon_voice_id_here",
+        },
+        Santa: {
+            avatar_id: "Santa_Fireplace_Front_public",
+            voice_id: "santa_voice_id_here",
+        },
+        Ann: {
+            avatar_id: "Ann_Doctor_Sitting_public",
+            voice_id: "ann_voice_id_here",
+        },
+        Chiara: {
+            avatar_id: "chiara",
+            voice_id: "chiara_voice_id_here",
+        },
+    };
+
+    /* create promise.all that gets voice id for each using https://api.heygen.com/v2/avatar/{id}/details from resulting object field data.default_voice_id */
+    const avatarEntries = Object.entries(avatars);
+    const updatedAvatars = { ...avatars };
+
+    await Promise.all(
+        avatarEntries.map(async ([name, avatar]) => {
+            try {
+                const response = await fetch(`https://api.heygen.com/v2/avatar/${avatar.avatar_id}/details`, {
+                    headers: { Authorization: `Bearer ${process.env.HEYGEN_API_KEY}` },
+                });
+                const data = await response.json();
+                const defaultVoiceId = data.data.default_voice_id;
+
+                // Update the avatar object with the fetched voice ID
+                updatedAvatars[name].voice_id = defaultVoiceId;
+
+                console.log(`Updated ${name}: ${avatar.avatar_id} -> ${defaultVoiceId}`);
+            } catch (error) {
+                console.error(`Failed to fetch voice ID for ${name} (${avatar.avatar_id}):`, error.message);
+            }
+        })
+    );
+
+    console.log("Complete updated avatars list:", JSON.stringify(updatedAvatars, null, 2));
+    /* return updatedAvatars; */
+}
+
+async function generateTest() {
+    const apiKey = "<api_key>"; // Replace with your actual API key
+
+    const url = "https://api.heygen.com/v2/template/9540af77bafc4da5821841e6b2668549/generate";
+
+    const body = {
+        caption: true,
+        dimension: { width: 1280, height: 720 },
+        include_gif: false,
+        title: "Medicijnen bij verstopping VI-35",
+        variables: {
+            Tekst1: {
+                name: "Tekst1",
+                type: "text",
+                properties: {
+                    content:
+                        "مرحباً بكم في هذا الفيديو حول دواء الإمساك.🕓\n\nفي هذا الفيديو، نخبرك بأهم المعلومات.🕓 تكون مصاباً بالإمساك عندما يخرج البراز بشكل أقل مما اعتدت عليه.🕓 وغالباً ما يكون البراز صلباً وجافاً ويمكن أن يكون مؤلماً.\r\n",
+                },
+            },
+            Tekst2: {
+                name: "Tekst2",
+                type: "text",
+                properties: {
+                    content:
+                        "هذا الدواء ملين.🕓 يجعل الأمعاء تتحرك بشكل أكبر ويزيد من حركة الأمعاء ويدخل المزيد من الماء إلى البراز.🕓 ونتيجة لذلك، يتحرك البراز بشكل أفضل ويخرج من الجسم بسهولة أكبر.🕓🕓\r\n\r\nيعتمد وقت بدء عمل هذا الدواء على نوع الدواء الذي تتناوله.🕓 هناك أشكال مختلفة من هذا الدواء.🕓 تعمل التحاميل والحقنة الشرجية بسرعة كبيرة، عادةً خلال ساعة واحدة.🕓 تعمل الأقراص والشراب عادةً بعد بضع ساعات.\r\n",
+                },
+            },
+            Tekst3: {
+                name: "Tekst3",
+                type: "text",
+                properties: {
+                    content:
+                        "ستشرح الصيدلية كيفية استخدامه.🕓 تحقق أيضًا من الملصق.🕓🕓\r\n\r\nاستخدمه لفترة وجيزة ولا تزيد عن 3 أيام متتالية.🕓 إذا كنت تستخدمه كثيرًا أو لفترة طويلة جدًا، فقد تبدأ أمعاؤك في العمل بشكل أقل جودة.\r\n",
+                },
+            },
+            Tekst4: {
+                name: "Tekst4",
+                type: "text",
+                properties: {
+                    content: "قد تعاني أيضًا من آثار جانبية، مثل تقلصات البطن.🕓🕓\r\n\r\nهل لديك أي أسئلة أو تعاني من آثار جانبية أخرى؟🕓 إذا كان الأمر كذلك، ناقش ذلك مع الصيدلية أو طبيبك.\r\n",
+                },
+            },
+            Tekst5: {
+                name: "Tekst5",
+                type: "text",
+                properties: {
+                    content: "شكراً لك على المشاهدة.🕓 هل تريد معرفة المزيد عن دوائك؟🕓 إذاً اقرأ المعلومات من الصيدلية الخاصة بك والنشرة.\r\n",
+                },
+            },
+        },
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                accept: "application/json",
+                "x-api-key": apiKey,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+
+        const data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error("Fetch error:", error);
+    }
+}
+
+async function createAvatarIVVideo() {
+    const url = "https://api.heygen.com/v2/video/av4/generate";
+    const options = {
+        method: "POST",
+        headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "x-api-key": "MDY0NmNkNmQ1ZTgxNGRlMGEzZDVkMWM4MGVkYTNkYWYtMTc1NjE0NTkyMw==",
+        },
+        body: JSON.stringify({ video_orientation: "portrait" }),
+    };
+
+    fetch(url, options)
+        .then((res) => res.json())
+        .then((json) => console.log(json))
+        .catch((err) => console.error(err));
+}
+
 // ——— 4) Serve built Vue + SPA fallback ——
 const clientDist = path.join(__dirname, "heygen-client", "dist");
 app.use(express.static(clientDist));
@@ -659,6 +896,8 @@ app.get("*", (_, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);
+    /* translateVideo(); */
+    /* getDefaultAudioIDFromListOfAvatars(); */
     /* generatePaulVideo(); */
     /* generateVideoFromTemplate(); */
     /* getTransparentStudioAvatars(); */

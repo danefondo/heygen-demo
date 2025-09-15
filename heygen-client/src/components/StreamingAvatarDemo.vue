@@ -29,11 +29,26 @@
             </div>
 
             <div class="StreamingAvatar--controls">
-                <button @click="startStreamingSession" :disabled="isLoadingSession || started">Start Avatar</button>
-                <button @click="stopStreamingSession" :disabled="!started">Stop Avatar</button>
-                <div class="StreamingAvatar--chat">
-                    <input class="StreamingAvatar--chat--input" @keyup.enter="handleSpeak" type="text" placeholder="Enter text" v-model="avatarNextText" />
-                    <button @click="handleSpeak" :disabled="!started">Send</button>
+                <div class="controls-row primary-controls">
+                    <button @click="startStreamingSession" :disabled="isLoadingSession || started">Start Avatar</button>
+                    <button @click="stopStreamingSession" :disabled="!started">Stop Avatar</button>
+                    <button @click="interruptAvatar" :disabled="!started">Interrupt</button>
+
+                    <div class="StreamingAvatar--chat" v-if="chatMode === 'chat'">
+                        <input class="StreamingAvatar--chat--input" @keyup.enter="handleSpeak" type="text" placeholder="Enter text" v-model="avatarNextText" />
+                        <button @click="handleSpeak" :disabled="!started">Send</button>
+                    </div>
+
+                    <div class="StreamingAvatar--voice-status" v-else>
+                        {{ voiceStatus }}
+                    </div>
+                </div>
+
+                <div class="controls-row mode-switch-row">
+                    <div class="StreamingAvatar--mode-switch">
+                        <button @click="switchChatMode('chat')" :class="{ active: chatMode === 'chat' }">Chat</button>
+                        <button @click="switchChatMode('voice')" :class="{ active: chatMode === 'voice' }" :disabled="!started">Mic</button>
+                    </div>
                 </div>
             </div>
 
@@ -126,6 +141,10 @@ export default {
             avatarNextText: "",
             repeat: false,
 
+            /** Chat / Voice mode */
+            chatMode: "chat", // 'chat' | 'voice'
+            voiceStatus: "",
+
             /** Demo setup */
             currentDemo: "streaming",
 
@@ -213,24 +232,56 @@ export default {
                 this.addConsoleLog("Setting up avatar event listeners...");
                 this.avatar.on(StreamingEvents.STREAM_READY, this.handleStreamReady);
                 this.avatar.on(StreamingEvents.STREAM_DISCONNECTED, this.handleStreamDisconnected);
-                this.avatar.on(StreamingEvents.AVATAR_START_TALKING, () => {
-                    this.addConsoleLog("Avatar started talking");
+                this.avatar.on(StreamingEvents.AVATAR_START_TALKING, (e) => {
+                    this.addConsoleLog("AVATAR_START_TALKING", e);
+                    console.log("AVATAR_START_TALKING", e);
                 });
-                this.avatar.on(StreamingEvents.AVATAR_STOP_TALKING, () => {
-                    this.addConsoleLog("Avatar stopped talking");
+                this.avatar.on(StreamingEvents.AVATAR_STOP_TALKING, (e) => {
+                    this.addConsoleLog("AVATAR_STOP_TALKING", e);
+                    console.log("AVATAR_STOP_TALKING", e);
+                });
+                /*                 this.avatar.on(StreamingEvents.AVATAR_TALKING_MESSAGE, (e) => {
+                    this.addConsoleLog("AVATAR_TALKING_MESSAGE", e.detail.message);
+                    console.log("AVATAR_TALKING_MESSAGE", e.detail.message);
+                }); */
+                this.avatar.on(StreamingEvents.AVATAR_END_MESSAGE, (e) => {
+                    this.addConsoleLog("AVATAR_END_MESSAGE", e);
+                    console.log("AVATAR_END_MESSAGE", e);
+                });
+
+                this.avatar.on(StreamingEvents.USER_TALKING_MESSAGE, (e) => {
+                    this.addConsoleLog("USER_TALKING_MESSAGE", e.detail.message);
+                    console.log("USER_TALKING_MESSAGE", e.detail.message);
+                });
+                this.avatar.on(StreamingEvents.USER_END_MESSAGE, (e) => {
+                    this.addConsoleLog("USER_END_MESSAGE", e.detail.message);
+                    console.log("USER_END_MESSAGE", e);
+                });
+                this.avatar.on(StreamingEvents.USER_START, (e) => {
+                    this.addConsoleLog("USER_START", e);
+                    console.log("USER_START", e);
+                });
+                this.avatar.on(StreamingEvents.USER_STOP, (e) => {
+                    this.addConsoleLog("USER_STOP", e);
+                    console.log("USER_STOP", e);
+                });
+                this.avatar.on(StreamingEvents.USER_SILENCE, (e) => {
+                    this.addConsoleLog("USER_SILENCE", e);
+                    console.log("USER_SILENCE", e);
+                });
+                this.avatar.on(StreamingEvents.USER_STOP, (e) => {
+                    this.addConsoleLog("USER_STOP", e);
+                    console.log("USER_STOP", e);
                 });
 
                 this.addConsoleLog("Creating avatar...");
                 this.sessionData = await this.avatar.createStartAvatar({
                     quality: AvatarQuality.High,
                     avatarName: this.selectedAvatar,
-/*                     voice: {
-                        voice_id: "df1b0eaaf0cb4229b238ec530828ea83",
+                    voice: {
+                        voice_id: "d2f4f24783d04e22ab49ee8fdc3715e0",
                     },
-                    language: "french",
-                    sttSettings: {
-                        provider: "deepgram",
-                    }, */
+                    version: "v2",
                 });
                 this.sessionId = this.sessionData.session_id;
                 this.addConsoleLog(`Session started and session ID: ${this.sessionData.session_id}`);
@@ -362,6 +413,22 @@ export default {
             this.avatarNextText = "";
         },
 
+        async interruptAvatar() {
+            if (!this.avatar || !this.started) {
+                this.addConsoleLog("Avatar session has not started yet");
+                return;
+            }
+
+            try {
+                this.addConsoleLog("Interrupting avatar...");
+                await this.avatar.interrupt();
+                this.addConsoleLog("Avatar interrupted successfully");
+            } catch (err) {
+                this.addConsoleLog(`Failed to interrupt avatar: ${err}`);
+                console.error("Failed to interrupt avatar:", err);
+            }
+        },
+
         /** Video generation methods */
         async generateVideo() {
             /** Ensure that voices and video avatars are loaded otherwise alert to prompt user to wait */
@@ -477,6 +544,31 @@ export default {
                     callback();
                 }
             }, 1000);
+        },
+
+        /** Chat / Voice mode toggle */
+        async switchChatMode(mode) {
+            if (this.chatMode === mode) return;
+
+            if (!this.avatar || !this.started) {
+                this.addConsoleLog("Avatar session has not started yet");
+                return;
+            }
+
+            try {
+                if (mode === "voice") {
+                    this.addConsoleLog("Switching to voice chat mode ...");
+                    await this.avatar.startVoiceChat({ useSilencePrompt: false });
+                    this.voiceStatus = "🎙️ Voice chat active. Speak into your microphone...";
+                } else {
+                    this.addConsoleLog("Returning to text chat mode ...");
+                    await this.avatar.closeVoiceChat();
+                    this.voiceStatus = "";
+                }
+                this.chatMode = mode;
+            } catch (err) {
+                this.addConsoleLog(`Failed to switch mode: ${err}`);
+            }
         },
 
         /** UI METHODS */
@@ -695,6 +787,20 @@ export default {
     margin-bottom: 1.5rem;
 }
 
+/* Mode switch (Chat / Mic) styles */
+.StreamingAvatar--mode-switch {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 10px;
+}
+.StreamingAvatar--mode-switch button {
+    padding: 8px 18px;
+}
+.StreamingAvatar--mode-switch button.active {
+    background: #000000;
+    color: #ffffff;
+    font-weight: bold;
+}
 .StreamingAvatar--picker select {
     margin-left: 5px;
     border-color: #ddd;
@@ -733,5 +839,26 @@ button {
 button:disabled {
     background-color: #dddddd;
     cursor: not-allowed;
+}
+
+/* Re-layout controls into column rows */
+.StreamingAvatar--controls {
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.controls-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.primary-controls {
+    justify-content: flex-start;
+}
+
+.mode-switch-row {
+    justify-content: flex-start;
 }
 </style>
