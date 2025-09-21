@@ -447,7 +447,7 @@ async function getTransparentStudioAvatars() {
 }
 
 async function generateVideoFromTemplate() {
-    fetch("https://api.heygen.com/v2/template/f52003c9d1294e2fb919970dd02ed162/generate", {
+    fetch("https://api.heygen.com/v2/template/e795ccae307541479e9f0b7946cfe551/generate", {
         method: "POST",
         headers: {
             "X-Api-Key": KEY,
@@ -455,25 +455,179 @@ async function generateVideoFromTemplate() {
         },
         body: JSON.stringify({
             caption: true,
-            title: "Some Awesome Title",
+            title: "Marketing AI boom faces crisis of consumer trust",
             variables: {
-                script_en: {
-                    name: "script_en",
-                    type: "text",
-                    properties: {
-                        content: "Hey there, how are you today?",
-                    },
-                },
-                script1_voice: {
-                    name: "script1_voice",
-                    type: "voice",
-                    properties: {
-                        voice_id: "8b92884579014f8e8147836bbd0c13ca",
-                    },
-                },
+              scene2_Text: {
+                name: "scene2_Text",
+                type: "text",
+                properties: {
+                  content: "Did you know that 70% of consumers DON’T trust AI in marketing?!"
+                }
+              },
+              scene2_Script: {
+                name: "scene2_Script",
+                type: "text",
+                properties: {
+                  content: "Did you know that 70% of consumers DON’T trust AI in marketing?!"
+                }
+              },
+              scene2_avatar: {
+                name: "scene2_avatar",
+                type: "character",
+                properties: {
+                  character_id: "2b3359889fc8498db26c2ce657b38631",
+                  type: "talking_photo"
+                }
+              },
+              scene2_background: {
+                name: "scene2_background",
+                type: "video",
+                properties: {
+                  url: "https://storage.theapi.app/videos/289419676504976.mp4",
+                  asset_id: null,
+                  play_style: "fit_to_scene",
+                  fit: "none",
+                  volume: 1.0
+                }
+              },
+              scene3_Text: {
+                name: "scene3_Text",
+                type: "text",
+                properties: {
+                  content: "It’s shocking, but there’s a storm brewing in the AI business world!"
+                }
+              },
+              scene3_Script: {
+                name: "scene3_Script",
+                type: "text",
+                properties: {
+                  content: "It’s shocking, but there’s a storm brewing in the AI business world!"
+                }
+              },
+              scene3_avatar: {
+                name: "scene3_avatar",
+                type: "character",
+                properties: {
+                  character_id: "2b3359889fc8498db26c2ce657b38631",
+                  type: "talking_photo"
+                }
+              },
+              scene3_background: {
+                name: "scene3_background",
+                type: "video",
+                properties: {
+                  url: "https://storage.theapi.app/videos/289419663537945.mp4",
+                  asset_id: null,
+                  play_style: "fit_to_scene",
+                  fit: "none",
+                  volume: 1.0
+                }
+              },
+              scene4_Text: {
+                name: "scene4_Text",
+                type: "text",
+                properties: {
+                  content: "Just like you wouldn’t let a stranger into your house without knowing their intentions."
+                }
+              },
+              scene4_Script: {
+                name: "scene4_Script",
+                type: "text",
+                properties: {
+                  content: "Just like you wouldn’t let a stranger into your house without knowing their intentions."
+                }
+              },
+              scene4_avatar: {
+                name: "scene4_avatar",
+                type: "character",
+                properties: {
+                  character_id: "2b3359889fc8498db26c2ce657b38631",
+                  type: "talking_photo"
+                }
+              },
+              scene4_background: {
+                name: "scene4_background",
+                type: "video",
+                properties: {
+                  url: "https://storage.theapi.app/videos/289419652535458.mp4",
+                  asset_id: null,
+                  play_style: "fit_to_scene",
+                  fit: "none",
+                  volume: 1.0
+                }
+              },
+              scene5_Text: {
+                name: "scene5_Text",
+                type: "text",
+                properties: {
+                  content: "But here’s the kicker: businesses NEED AI to race past competitors!"
+                }
+              },
+              scene5_Script: {
+                name: "scene5_Script",
+                type: "text",
+                properties: {
+                  content: "But here’s the kicker: businesses NEED AI to race past competitors!"
+                }
+              },
+              scene5_avatar: {
+                name: "scene5_avatar",
+                type: "character",
+                properties: {
+                  character_id: "2b3359889fc8498db26c2ce657b38631",
+                  type: "talking_photo"
+                }
+              },
+              scene5_background: {
+                name: "scene5_background",
+                type: "video",
+                properties: {
+                  url: "https://storage.theapi.app/videos/289419725306970.mp4",
+                  asset_id: null,
+                  play_style: "fit_to_scene",
+                  fit: "none",
+                  volume: 1.0
+                }
+              },
+              scene6_Text: {
+                name: "scene6_Text",
+                type: "text",
+                properties: {
+                  content: "What do you think is the key to restoring consumer confidence in AI?"
+                }
+              },
+              scene6_Script: {
+                name: "scene6_Script",
+                type: "text",
+                properties: {
+                  content: "What do you think is the key to restoring consumer confidence in AI?"
+                }
+              },
+              scene6_avatar: {
+                name: "scene6_avatar",
+                type: "character",
+                properties: {
+                  character_id: "2b3359889fc8498db26c2ce657b38631",
+                  type: "talking_photo"
+                }
+              },
+              scene6_background: {
+                name: "scene6_background",
+                type: "video",
+                properties: {
+                  url: "https://storage.theapi.app/videos/289419696303023.mp4",
+                  asset_id: null,
+                  play_style: "fit_to_scene",
+                  fit: "none",
+                  volume: 1.0
+                }
+              }
             },
-            dimension: { width: 1280, height: 720 },
-        }),
+            dimension: {
+              width: 720,
+              height: 1280
+            }
+        })
     })
         .then((res) => res.json())
         .then((json) => console.log(json))
